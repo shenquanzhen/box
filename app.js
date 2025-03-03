@@ -15,20 +15,23 @@ renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 // 添加光源
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // 增强环境光
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // 增强直射光
 directionalLight.position.set(0, 1, 1);
 scene.add(directionalLight);
 
 // 创建3D对象 - 立方体固定在场景中
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+const geometry = new THREE.BoxGeometry(2, 2, 2); // 增大立方体尺寸
 const material = new THREE.MeshPhongMaterial({ 
-  color: 0x00ff00,
-  shininess: 100
+  color: 0xff0000, // 改为红色，更容易看见
+  shininess: 100,
+  emissive: 0x222222, // 添加自发光
+  transparent: false, // 确保不透明
+  opacity: 1.0
 });
 const cube = new THREE.Mesh(geometry, material);
-cube.position.set(0, 0, 0); // 将立方体放置在场景中心
+cube.position.set(0, 0, -3); // 将立方体放置在相机前方
 scene.add(cube);
 
 // 创建视频背景
@@ -37,7 +40,7 @@ let video, videoTexture, videoMaterial, videoScreen;
 // 设备方向和运动传感器
 let deviceOrientationControls = null;
 let hasDeviceOrientation = false;
-let isRotating = true; // 控制立方体是否旋转
+let isRotating = false; // 默认不旋转
 
 // 调试元素
 const debugElement = document.getElementById('debug');
@@ -84,7 +87,8 @@ function updateDebugInfo() {
     '设备方向': hasDeviceOrientation ? '已检测' : '未检测',
     '视频状态': video ? (video.paused ? '已暂停' : '播放中') : '未初始化',
     '屏幕尺寸': `${window.innerWidth}x${window.innerHeight}`,
-    '视频尺寸': video ? `${video.videoWidth}x${video.videoHeight}` : '未知'
+    '视频尺寸': video ? `${video.videoWidth}x${video.videoHeight}` : '未知',
+    '立方体旋转': isRotating ? '开启' : '关闭'
   };
   
   debugElement.innerHTML = Object.entries(info)
@@ -131,7 +135,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const videoGeometry = new THREE.PlaneGeometry(2, 2);
     videoMaterial = new THREE.MeshBasicMaterial({ 
       map: videoTexture,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
+      depthTest: true,  // 启用深度测试
+      depthWrite: true  // 启用深度写入
     });
     
     // 创建背景场景
@@ -170,18 +176,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         deviceOrientationControls.update();
       }
       
-      // 旋转立方体（轻微自转，增强3D效果）
+      // 旋转立方体（仅当isRotating为true时）
       if (isRotating) {
         cube.rotation.y += 0.01;
         cube.rotation.x += 0.005;
       }
       
       // 先渲染视频背景
-      renderer.autoClear = false;
+      renderer.autoClear = true; // 修改为true，确保每次渲染前清除
       renderer.clear();
       renderer.render(backgroundScene, backgroundCamera);
       
       // 再渲染3D场景
+      renderer.autoClear = false; // 设置为false，避免清除背景
       renderer.render(scene, camera);
       
       // 每10帧更新一次调试信息，避免性能问题
@@ -214,7 +221,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const resetButton = document.getElementById('resetCube');
       if (resetButton) {
         resetButton.addEventListener('click', () => {
-          cube.position.set(0, 0, 0);
+          cube.position.set(0, 0, -3);
+          cube.rotation.set(0, 0, 0); // 重置旋转
+          camera.position.set(0, 0, 5); // 重置相机位置
+          camera.lookAt(cube.position);
           updateDebugInfo();
         });
       }
@@ -224,6 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (toggleButton) {
         toggleButton.addEventListener('click', () => {
           isRotating = !isRotating;
+          toggleButton.textContent = isRotating ? '停止旋转' : '开始旋转';
           updateDebugInfo();
         });
       }
@@ -232,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const colorButton = document.getElementById('changeCubeColor');
       if (colorButton) {
         colorButton.addEventListener('click', () => {
-          const colors = [0x00ff00, 0xff0000, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+          const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
           const currentColor = material.color.getHex();
           const currentIndex = colors.indexOf(currentColor);
           const nextIndex = (currentIndex + 1) % colors.length;
@@ -279,8 +290,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const y = -(event.clientY / window.innerHeight) * 2 + 1;
         
         // 根据鼠标位置微调相机位置
-        camera.position.x = x * 2;
-        camera.position.y = y * 2;
+        camera.position.x = x * 3;
+        camera.position.y = y * 3;
         camera.position.z = 5; // 保持z轴距离
         
         // 确保相机始终看向立方体
@@ -296,8 +307,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const gammaRad = THREE.MathUtils.degToRad(gamma);
       
       // 根据设备方向计算相机位置
-      camera.position.x = Math.sin(gammaRad) * 3;
-      camera.position.y = Math.sin(betaRad) * 3;
+      camera.position.x = Math.sin(gammaRad) * 4;
+      camera.position.y = Math.sin(betaRad) * 4;
       camera.position.z = 5 - Math.cos(betaRad) * Math.cos(gammaRad) * 2;
       
       // 确保相机始终看向立方体
