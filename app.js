@@ -13,19 +13,44 @@ const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
+// 检查摄像头权限
+async function checkCameraPermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // 获取成功后释放流
+    stream.getTracks().forEach(track => track.stop());
+    return true;
+  } catch (error) {
+    console.error('摄像头权限检查失败:', error);
+    return false;
+  }
+}
+
 // AR初始化
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 先检查摄像头权限
+  const hasPermission = await checkCameraPermission();
+  if (!hasPermission) {
+    alert('无法访问摄像头。请确保已授予摄像头权限，并确保没有其他应用正在使用摄像头。');
+    return;
+  }
+
   try {
     const arToolkitSource = new ARjs.ArToolkitSource({
       sourceType: 'webcam',
     });
 
-    const arToolkitContext = new ARjs.ArToolkitContext({
-      cameraParametersUrl: 'data/camera_para.dat',
-      detectionMode: 'mono',
-    });
+    // 改进初始化处理
+    arToolkitSource.init(function() {
+      setTimeout(() => {
+        onResize();
+      }, 2000);
+      
+      const arToolkitContext = new ARjs.ArToolkitContext({
+        cameraParametersUrl: 'data/camera_para.dat',
+        detectionMode: 'mono',
+      });
 
-    arToolkitSource.init(() => {
       arToolkitContext.init(() => {
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
         // 渲染循环
@@ -37,9 +62,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         animate();
       });
+    }, function(error) {
+      console.error('AR工具包初始化失败:', error);
+      alert('AR初始化失败: ' + error);
     });
+
+    // 处理窗口大小变化
+    function onResize() {
+      arToolkitSource.onResizeElement();
+      arToolkitSource.copyElementSizeTo(renderer.domElement);
+      if (arToolkitContext.arController !== null) {
+        arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas);
+      }
+    }
+
+    window.addEventListener('resize', onResize);
+
   } catch (error) {
     console.error('AR初始化失败:', error);
-    alert('AR功能初始化失败，请检查摄像头权限并刷新页面');
+    alert('AR功能初始化失败，错误信息: ' + error.message);
   }
 });
