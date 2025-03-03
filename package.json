@@ -1,0 +1,29 @@
+{
+  "name": "3d-space-cube",
+  "version": "1.0.0",
+  "description": "3D空间感知立方体应用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "three.js",
+    "webrtc",
+    "3d",
+    "ar"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 

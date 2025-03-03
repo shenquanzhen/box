@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D 摄像头互动</title>
+  <title>3D 空间感知立方体</title>
   <!-- Three.js库 -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/examples/js/loaders/GLTFLoader.js"></script>
@@ -74,10 +74,10 @@
   </style>
 </head>
 <body>
-  <div id="info">移动设备来从不同角度观察立方体</div>
+  <div id="info">拖动屏幕围绕立方体移动 | 滚轮调整距离</div>
   <div id="debug">调试信息加载中...</div>
   <div id="controls">
-    <button id="resetCube">重置立方体位置</button>
+    <button id="resetCube">重置视角</button>
     <button id="toggleRotation">开始旋转</button>
     <button id="changeCubeColor">更换颜色</button>
   </div>
