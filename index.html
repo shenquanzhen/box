@@ -35,10 +35,52 @@
       background-color: rgba(0,0,0,0.5);
       z-index: 100;
     }
+    #debug {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: white;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 5px;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 100;
+      max-width: 300px;
+    }
+    #controls {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      padding: 10px;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 100;
+      border-radius: 5px;
+    }
+    button {
+      margin: 5px;
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
   <div id="info">移动设备来从不同角度观察立方体</div>
+  <div id="debug">调试信息加载中...</div>
+  <div id="controls">
+    <button id="resetCube">重置立方体位置</button>
+    <button id="toggleRotation">暂停/继续旋转</button>
+    <button id="changeCubeColor">更换颜色</button>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>
