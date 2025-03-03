@@ -2,17 +2,43 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR 乒乓球游戏</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3D 摄像头互动</title>
+  <!-- Three.js库 -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.126.1/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ar-js-org/three.js@0.150.1/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ar-js-org/ar.js@3.4.0/dist/ar.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsartoolkit5@2.2.1/build/artoolkit.min.js"></script>
-
   
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      touch-action: none; /* 防止移动设备上的默认触摸行为 */
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      padding: 5px;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+  </style>
 </head>
 <body>
+  <div id="info">移动设备来从不同角度观察立方体</div>
   <script src="app.js"></script>
 </body>
 </html>
