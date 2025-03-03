@@ -22,17 +22,21 @@ directionalLight.position.set(0, 1, 1);
 scene.add(directionalLight);
 
 // 创建3D对象 - 立方体固定在场景中
-const geometry = new THREE.BoxGeometry(2, 2, 2); // 增大立方体尺寸
+const geometry = new THREE.BoxGeometry(3, 3, 3); // 进一步增大立方体尺寸
 const material = new THREE.MeshPhongMaterial({ 
-  color: 0xff0000, // 改为红色，更容易看见
+  color: 0xff0000, // 红色
   shininess: 100,
   emissive: 0x222222, // 添加自发光
   transparent: false, // 确保不透明
   opacity: 1.0
 });
 const cube = new THREE.Mesh(geometry, material);
-cube.position.set(0, 0, -3); // 将立方体放置在相机前方
+cube.position.set(0, 0, 0); // 将立方体放置在场景中心
 scene.add(cube);
+
+// 添加坐标轴辅助（帮助调试）
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
 
 // 创建视频背景
 let video, videoTexture, videoMaterial, videoScreen;
@@ -43,7 +47,7 @@ let hasDeviceOrientation = false;
 let isRotating = false; // 默认不旋转
 
 // 调试元素
-const debugElement = document.getElementById('debug');
+let debugElement = null;
 
 // 检查摄像头权限
 async function checkCameraPermission() {
@@ -79,16 +83,19 @@ async function requestDeviceOrientationPermission() {
 
 // 更新调试信息
 function updateDebugInfo() {
+  debugElement = document.getElementById('debug');
   if (!debugElement) return;
   
   const info = {
     '立方体位置': `X: ${cube.position.x.toFixed(2)}, Y: ${cube.position.y.toFixed(2)}, Z: ${cube.position.z.toFixed(2)}`,
+    '立方体尺寸': `${geometry.parameters.width}x${geometry.parameters.height}x${geometry.parameters.depth}`,
     '相机位置': `X: ${camera.position.x.toFixed(2)}, Y: ${camera.position.y.toFixed(2)}, Z: ${camera.position.z.toFixed(2)}`,
     '设备方向': hasDeviceOrientation ? '已检测' : '未检测',
     '视频状态': video ? (video.paused ? '已暂停' : '播放中') : '未初始化',
     '屏幕尺寸': `${window.innerWidth}x${window.innerHeight}`,
     '视频尺寸': video ? `${video.videoWidth}x${video.videoHeight}` : '未知',
-    '立方体旋转': isRotating ? '开启' : '关闭'
+    '立方体旋转': isRotating ? '开启' : '关闭',
+    '渲染器信息': `${renderer.info.render.triangles}三角形, ${renderer.info.render.calls}渲染调用`
   };
   
   debugElement.innerHTML = Object.entries(info)
@@ -98,31 +105,61 @@ function updateDebugInfo() {
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
-  // 先检查摄像头权限
-  const stream = await checkCameraPermission();
-  if (!stream) {
-    alert('无法访问摄像头。请确保已授予摄像头权限，并确保没有其他应用正在使用摄像头。');
-    return;
+  // 初始化调试信息
+  debugElement = document.getElementById('debug');
+  if (debugElement) {
+    debugElement.innerHTML = '正在初始化...';
   }
-
-  // 请求设备方向权限
-  const hasOrientationPermission = await requestDeviceOrientationPermission();
-  if (!hasOrientationPermission) {
-    alert('无法访问设备方向传感器。某些功能可能受限。');
-  }
-
+  
   try {
+    // 先检查摄像头权限
+    const stream = await checkCameraPermission();
+    if (!stream) {
+      alert('无法访问摄像头。请确保已授予摄像头权限，并确保没有其他应用正在使用摄像头。');
+      if (debugElement) {
+        debugElement.innerHTML = '摄像头权限被拒绝';
+      }
+      return;
+    }
+
+    // 请求设备方向权限
+    const hasOrientationPermission = await requestDeviceOrientationPermission();
+    if (!hasOrientationPermission) {
+      alert('无法访问设备方向传感器。某些功能可能受限。');
+      if (debugElement) {
+        debugElement.innerHTML += '<br>设备方向权限被拒绝';
+      }
+    }
+
     // 创建视频元素
     video = document.createElement('video');
     video.srcObject = stream;
     video.playsInline = true; // 重要：iOS上需要
     video.muted = true;
-    video.play();
+    
+    // 确保视频开始播放
+    try {
+      await video.play();
+      console.log('视频开始播放');
+    } catch (e) {
+      console.error('视频播放失败:', e);
+      if (debugElement) {
+        debugElement.innerHTML += '<br>视频播放失败: ' + e.message;
+      }
+    }
     
     // 获取视频流的实际宽高比
     video.addEventListener('loadedmetadata', () => {
-      const videoAspect = video.videoWidth / video.videoHeight;
-      adjustBackgroundToVideoAspect(videoAspect);
+      console.log('视频元数据加载完成', video.videoWidth, video.videoHeight);
+      if (video.videoWidth && video.videoHeight) {
+        const videoAspect = video.videoWidth / video.videoHeight;
+        adjustBackgroundToVideoAspect(videoAspect);
+      } else {
+        console.warn('视频尺寸无效');
+        if (debugElement) {
+          debugElement.innerHTML += '<br>视频尺寸无效';
+        }
+      }
       updateDebugInfo(); // 更新调试信息
     });
     
@@ -136,8 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     videoMaterial = new THREE.MeshBasicMaterial({ 
       map: videoTexture,
       side: THREE.DoubleSide,
-      depthTest: true,  // 启用深度测试
-      depthWrite: true  // 启用深度写入
+      depthTest: false,  // 禁用深度测试，确保背景始终在后面
+      depthWrite: false  // 禁用深度写入
     });
     
     // 创建背景场景
@@ -165,6 +202,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const scale = videoAspect / screenAspect;
         videoScreen.scale.set(scale, 1, 1);
       }
+      
+      console.log('调整视频背景', videoAspect, screenAspect, videoScreen.scale);
     }
     
     // 渲染循环
@@ -221,7 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const resetButton = document.getElementById('resetCube');
       if (resetButton) {
         resetButton.addEventListener('click', () => {
-          cube.position.set(0, 0, -3);
+          cube.position.set(0, 0, 0);
           cube.rotation.set(0, 0, 0); // 重置旋转
           camera.position.set(0, 0, 5); // 重置相机位置
           camera.lookAt(cube.position);
@@ -328,9 +367,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 初始更新调试信息
     updateDebugInfo();
+    console.log('初始化完成');
 
   } catch (error) {
     console.error('初始化失败:', error);
     alert('功能初始化失败，错误信息: ' + error.message);
+    if (debugElement) {
+      debugElement.innerHTML = '初始化失败: ' + error.message;
+    }
   }
 });
