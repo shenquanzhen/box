@@ -14,26 +14,32 @@ const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
 // AR初始化
-const arToolkitSource = new THREEx.ArToolkitSource({
-  sourceType: 'webcam',
-});
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const arToolkitSource = new ARjs.ArToolkitSource({
+      sourceType: 'webcam',
+    });
 
-const arToolkitContext = new THREEx.ArToolkitContext({
-  cameraParametersUrl: 'data/camera_para.dat',
-  detectionMode: 'mono',
-});
+    const arToolkitContext = new ARjs.ArToolkitContext({
+      cameraParametersUrl: 'data/camera_para.dat',
+      detectionMode: 'mono',
+    });
 
-arToolkitSource.init(() => {
-  arToolkitContext.init(() => {
-    camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-  });
+    arToolkitSource.init(() => {
+      arToolkitContext.init(() => {
+        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+        // 渲染循环
+        function animate() {
+          requestAnimationFrame(animate);
+          cube.rotation.x += 0.01;
+          cube.rotation.y += 0.01;
+          renderer.render(scene, camera);
+        }
+        animate();
+      });
+    });
+  } catch (error) {
+    console.error('AR初始化失败:', error);
+    alert('AR功能初始化失败，请检查摄像头权限并刷新页面');
+  }
 });
-
-// 渲染循环
-function animate() {
-  requestAnimationFrame(animate);
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera);
-}
-animate();
